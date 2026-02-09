@@ -1,6 +1,6 @@
 # Aiden SDK
 
-Official TypeScript SDK for the [Aiden AI](https://aiden.ai) API. Provides type-safe access to chat, knowledge/RAG, skills, notebooks, and 15+ other resources with built-in streaming, retry logic, and error handling.
+Official TypeScript SDK for the [Aiden AI](https://github.com/papa-bear-ventures/aiden-sdk) API. Provides type-safe access to chat, knowledge/RAG, skills, notebooks, and 15+ other resources with built-in streaming, retry logic, and error handling.
 
 ```bash
 npm install @aiden-ai/sdk
