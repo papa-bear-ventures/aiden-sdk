@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProTech Industrial Supplies — eCatalog</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+  <!-- ======================================================================
+       Header with AI Search Bar
+       ====================================================================== -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        ProTech Industrial
+      </div>
+
+      <div class="search-container">
+        <form class="search-bar" id="searchForm">
+          <span class="ai-badge">✦ AI</span>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Ask about products... e.g. 'Which drill is best for metalwork?'"
+            autocomplete="off"
+          >
+          <button type="submit" id="searchBtn">Ask AI</button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================================================================
+       Chat Panel (appears below search bar)
+       ====================================================================== -->
+  <div class="overlay" id="overlay"></div>
+
+  <div class="chat-panel" id="chatPanel">
+    <button class="chat-close" id="chatClose">✕</button>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-panel-footer">
+      Powered by Aiden AI — answers are based on our product catalogue
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       Product Grid
+       ====================================================================== -->
+  <main class="main">
+    <h1 class="section-title">Product Catalogue</h1>
+    <p class="section-subtitle">Professional tools and equipment for industry. Use the AI search bar to find the right product.</p>
+
+    <div class="product-grid" id="productGrid">
+      <!-- Products injected by JS -->
+    </div>
+  </main>
+
+  <!-- ======================================================================
+       Chat Widget Script
+       ====================================================================== -->
+  <script src="/chat-widget.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "knowledge-assistant-bot-example",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Internal knowledge assistant bot using Aiden SDK",
+  "scripts": {
+    "start": "npx tsx bot.ts"
+  },
+  "dependencies": {
+    "@aiden-ai/sdk": "file:../../",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}
