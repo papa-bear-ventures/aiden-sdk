@@ -78,15 +78,19 @@
   async function ensureSession() {
     if (sessionId) return sessionId;
 
-    try {
-      const res = await fetch('/api/chat/session', { method: 'POST' });
-      const data = await res.json();
-      sessionId = data.sessionId;
-      return sessionId;
-    } catch (err) {
-      console.error('Failed to create session:', err);
-      throw err;
+    const res = await fetch('/api/chat/session', { method: 'POST' });
+    const data = await res.json();
+
+    if (!res.ok) {
+      const msg = data.error || res.statusText || 'Failed to create chat session';
+      throw new Error(msg);
     }
+    if (!data.sessionId) {
+      throw new Error('Server did not return a session ID. Check the server logs.');
+    }
+
+    sessionId = data.sessionId;
+    return sessionId;
   }
 
   // ========================================================================
@@ -175,6 +179,9 @@
 
     try {
       await ensureSession();
+      if (!sessionId) {
+        throw new Error('No chat session. Please try again.');
+      }
 
       const response = await fetch('/api/chat/message', {
         method: 'POST',

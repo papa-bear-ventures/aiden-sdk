@@ -11,8 +11,11 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { AidenClient } from '@aiden-ai/sdk';
 import { products } from './products';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ============================================================================
 // Configuration
@@ -50,7 +53,7 @@ const aiden = new AidenClient({
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(import.meta.dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --------------------------------------------------------------------------
 // API: Get products (for the frontend to render)
@@ -69,7 +72,13 @@ app.post('/api/chat/session', async (_req, res) => {
     const session = await aiden.knowledge.createNotebookSession(NOTEBOOK_ID, {
       title: 'eCatalog Chat',
     });
-    res.json({ sessionId: session.data._id });
+    // API may return session id as sessionId, id, or _id
+    const d = session.data as { sessionId?: string; id?: string; _id?: string };
+    const sessionId = d.sessionId ?? d.id ?? d._id;
+    if (!sessionId) {
+      return res.status(500).json({ error: 'API did not return a session ID' });
+    }
+    res.json({ sessionId });
   } catch (error: any) {
     console.error('Failed to create session:', error.message);
     res.status(500).json({ error: error.message });
