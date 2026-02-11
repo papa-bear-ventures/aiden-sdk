@@ -9,6 +9,9 @@ dist/
 .env.local
 .env.*.local
 
+# Customer proposals / internal docs (NEVER commit to public repo)
+docs/*-proposal/
+
 # IDE
 .vscode/
 .idea/

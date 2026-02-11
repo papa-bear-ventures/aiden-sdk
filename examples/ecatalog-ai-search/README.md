@@ -1,6 +1,6 @@
 # eCatalog AI Search Bar
 
-An integrated search bar with AI chat functionality for a product catalogue. Based on a real customer requirement: **"integrierte Suchleiste mit KI Chat-Funktionalität im eCatalog"**.
+An integrated search bar with AI chat functionality for a product catalogue.
 
 ## What it does
 
