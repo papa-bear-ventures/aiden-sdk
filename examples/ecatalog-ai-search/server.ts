@@ -13,6 +13,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { AidenClient } from '@aiden-ai/sdk';
+import type { ChatSession } from '@aiden-ai/sdk';
 import { products } from './products';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -69,11 +70,10 @@ app.get('/api/products', (_req, res) => {
 
 app.post('/api/chat/session', async (_req, res) => {
   try {
-    const session = await aiden.knowledge.createNotebookSession(NOTEBOOK_ID, {
+    const session = await aiden.knowledge.createNotebookSession<ChatSession>(NOTEBOOK_ID, {
       title: 'eCatalog Chat',
     });
-    // API may return session id as sessionId, id, or _id
-    const d = session.data as { sessionId?: string; id?: string; _id?: string };
+    const d = session.data;
     const sessionId = d.sessionId ?? d.id ?? d._id;
     if (!sessionId) {
       return res.status(500).json({ error: 'API did not return a session ID' });

@@ -1,16 +1,3 @@
-/**
- * HTTP Client Layer
- *
- * Low-level fetch wrapper handling:
- * - Authorization header injection
- * - X-User-ID header
- * - Request timeouts
- * - Automatic retry with exponential backoff (429, 5xx)
- * - Rate-limit header parsing
- * - Response envelope unwrapping
- * - Error classification
- */
-
 import type {
   AidenClientConfig,
   ApiResponse,
@@ -25,10 +12,6 @@ import {
   createErrorFromResponse,
 } from './errors';
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface HttpRequestOptions extends RequestOptions {
@@ -36,17 +19,11 @@ export interface HttpRequestOptions extends RequestOptions {
   path: string;
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined>;
-  /** If true, returns the raw Response (for streaming, file downloads) */
-  raw?: boolean;
+  bodyMode?: 'json' | 'raw';
 }
 
-// ============================================================================
-// HTTP Client
-// ============================================================================
-
 export class HttpClient {
-  private readonly config: Required<Pick<AidenClientConfig, 'apiKey' | 'baseUrl'>> &
-    AidenClientConfig;
+  readonly config: Required<Pick<AidenClientConfig, 'apiKey' | 'baseUrl'>> & AidenClientConfig;
   private readonly fetchFn: typeof fetch;
   private readonly defaultTimeout: number;
   private readonly maxRetries: number;
@@ -59,86 +36,75 @@ export class HttpClient {
 
     if (!this.fetchFn) {
       throw new Error(
-        'No fetch implementation found. Please provide one via the `fetch` config option or use Node.js 18+.',
+        'No fetch implementation found. Use Node.js 18+ or pass `fetch` in config.',
       );
     }
   }
 
-  /**
-   * Make an API request and return the unwrapped data.
-   */
   async request<T>(options: HttpRequestOptions): Promise<ApiResponse<T>> {
     const response = await this.requestRaw(options);
-    const body = await response.json();
-
-    return body as ApiResponse<T>;
+    return response.json() as Promise<ApiResponse<T>>;
   }
 
-  /**
-   * Make an API request for a paginated list endpoint.
-   */
   async requestPaginated<T>(options: HttpRequestOptions): Promise<PaginatedResponse<T>> {
     const response = await this.requestRaw(options);
-    const body = await response.json();
-
-    return body as PaginatedResponse<T>;
+    return response.json() as Promise<PaginatedResponse<T>>;
   }
 
-  /**
-   * Make a raw API request, returning the fetch Response directly.
-   * Used for streaming (SSE) and file downloads.
-   */
+  /** JSON body without `{ data, meta }` (e.g. some admin or legacy endpoints). */
+  async requestPlain<T>(options: HttpRequestOptions): Promise<T> {
+    const response = await this.requestRaw(options);
+    return response.json() as Promise<T>;
+  }
+
   async requestRaw(options: HttpRequestOptions): Promise<Response> {
-    const { method, path, body, query, raw, signal, ...rest } = options;
+    const { method, path, body, query, signal, bodyMode, ...rest } = options;
     const url = this.buildUrl(path, query);
-    const headers = this.buildHeaders(rest);
+    const mode = bodyMode ?? 'json';
+    const headers = this.buildHeaders(rest, mode);
     const timeout = rest.timeout ?? this.defaultTimeout;
+
+    const fetchBody =
+      body === undefined ? undefined : mode === 'raw' ? (body as BodyInit) : JSON.stringify(body);
 
     let lastError: Error | undefined;
 
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
-        const response = await this.fetchWithTimeout(url, {
-          method,
-          headers,
-          body: body !== undefined ? JSON.stringify(body) : undefined,
-          signal,
-        }, timeout);
+        const response = await this.fetchWithTimeout(
+          url,
+          { method, headers, body: fetchBody, signal },
+          timeout,
+        );
 
-        // Success -- return response
         if (response.ok) {
           return response;
         }
 
-        // 204 No Content
         if (response.status === 204) {
           return response;
         }
 
-        // Parse error body
         const errorBody = await this.safeParseJson(response);
 
-        // Rate limited -- retry with backoff
         if (response.status === 429 && attempt < this.maxRetries) {
           const retryAfterMs = this.parseRetryAfter(response);
           const backoff = Math.min(retryAfterMs, this.calculateBackoff(attempt));
           await this.sleep(backoff);
-          lastError = createErrorFromResponse(response.status, errorBody, retryAfterMs);
+          lastError = createErrorFromResponse(response.status, errorBody as unknown, retryAfterMs);
           continue;
         }
 
-        // Server errors -- retry with backoff
         if (response.status >= 500 && attempt < this.maxRetries) {
           const backoff = this.calculateBackoff(attempt);
           await this.sleep(backoff);
-          lastError = createErrorFromResponse(response.status, errorBody);
+          lastError = createErrorFromResponse(response.status, errorBody as unknown);
           continue;
         }
 
-        // Non-retryable error -- throw immediately
         throw createErrorFromResponse(
           response.status,
-          errorBody,
+          errorBody as unknown,
           response.status === 429 ? this.parseRetryAfter(response) : undefined,
         );
       } catch (error) {
@@ -146,7 +112,6 @@ export class HttpClient {
           throw error;
         }
 
-        // Network / connection errors
         if (error instanceof TypeError && error.message.includes('fetch')) {
           lastError = new ConnectionError(`Failed to connect to ${url}`, error);
         } else if (error instanceof DOMException && error.name === 'AbortError') {
@@ -168,10 +133,6 @@ export class HttpClient {
     throw lastError ?? new ConnectionError('Request failed after all retries');
   }
 
-  // ==========================================================================
-  // Helpers
-  // ==========================================================================
-
   private buildUrl(path: string, query?: Record<string, string | number | boolean | undefined>): string {
     const base = this.config.baseUrl.replace(/\/+$/, '');
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
@@ -188,20 +149,23 @@ export class HttpClient {
     return url.toString();
   }
 
-  private buildHeaders(options: RequestOptions): Record<string, string> {
+  private buildHeaders(options: RequestOptions, bodyMode: 'json' | 'raw' = 'json'): Record<string, string> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${this.config.apiKey}`,
+      Authorization: `Bearer ${this.config.apiKey}`,
     };
 
-    // User ID header
+    if (bodyMode === 'json') {
+      headers['Content-Type'] = 'application/json';
+      headers['Accept'] = 'application/json';
+    } else {
+      headers['Accept'] = '*/*';
+    }
+
     const userId = options.userId ?? this.config.userId;
     if (userId) {
       headers['X-User-ID'] = userId;
     }
 
-    // Merge custom headers
     if (options.headers) {
       Object.assign(headers, options.headers);
     }
@@ -214,7 +178,6 @@ export class HttpClient {
     init: RequestInit,
     timeoutMs: number,
   ): Promise<Response> {
-    // If caller already provided an AbortSignal, combine with timeout
     if (init.signal) {
       return this.fetchFn(url, init);
     }
@@ -231,7 +194,7 @@ export class HttpClient {
 
   private async safeParseJson(response: Response): Promise<ApiErrorResponse> {
     try {
-      return await response.json() as ApiErrorResponse;
+      return (await response.json()) as ApiErrorResponse;
     } catch {
       return {
         error: {
@@ -248,12 +211,11 @@ export class HttpClient {
 
   private parseRetryAfter(response: Response): number {
     const retryAfter = response.headers.get('retry-after');
-    if (!retryAfter) return 60_000; // Default 60s
+    if (!retryAfter) return 60_000;
 
     const seconds = parseInt(retryAfter, 10);
     if (!isNaN(seconds)) return seconds * 1000;
 
-    // Try parsing as date
     const date = new Date(retryAfter);
     if (!isNaN(date.getTime())) {
       return Math.max(0, date.getTime() - Date.now());
@@ -263,10 +225,9 @@ export class HttpClient {
   }
 
   private calculateBackoff(attempt: number): number {
-    // Exponential backoff: 1s, 2s, 4s, 8s... with jitter
     const base = Math.pow(2, attempt) * 1000;
     const jitter = Math.random() * 500;
-    return Math.min(base + jitter, 30_000); // Cap at 30s
+    return Math.min(base + jitter, 30_000);
   }
 
   private sleep(ms: number): Promise<void> {

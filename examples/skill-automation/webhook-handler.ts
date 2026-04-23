@@ -19,6 +19,7 @@
 import 'dotenv/config';
 import express from 'express';
 import { AidenClient, AidenError } from '@aiden-ai/sdk';
+import type { SkillExecution } from '@aiden-ai/sdk';
 
 // ============================================================================
 // Configuration
@@ -89,7 +90,7 @@ async function processTicketAsync(ticket: {
   try {
     // Step 1: Classify the ticket
     console.log(`  📊 Classifying ticket ${ticket.id}...`);
-    const exec = await client.skills.run(CLASSIFY_SKILL, {
+    const exec = await client.skills.run<SkillExecution>(CLASSIFY_SKILL, {
       inputs: {
         subject: ticket.subject,
         body: ticket.body,

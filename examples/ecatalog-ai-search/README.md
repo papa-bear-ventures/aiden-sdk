@@ -29,7 +29,7 @@ The API key stays server-side. The frontend communicates with the local Express 
 cp .env.example .env
 # Edit .env with your values:
 #   AIDEN_API_KEY=your-api-key
-#   AIDEN_BASE_URL=https://your-api-url.com
+#   AIDEN_BASE_URL=https://test.ext-api.aiden-tech.eu  (your external API host)
 #   NOTEBOOK_ID=your-notebook-id
 ```
 

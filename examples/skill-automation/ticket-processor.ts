@@ -70,7 +70,7 @@ async function runSkillAndWait(
   maxWaitMs = 60_000,
 ): Promise<SkillExecution> {
   // Trigger the skill
-  const exec = await client.skills.run(skillId, { inputs });
+  const exec = await client.skills.run<SkillExecution>(skillId, { inputs });
   const executionId = exec.data._id;
 
   console.log(`    ⏳ Execution started: ${executionId}`);
@@ -82,7 +82,7 @@ async function runSkillAndWait(
   while (Date.now() - startTime < maxWaitMs) {
     await sleep(pollInterval);
 
-    const status = await client.skills.getExecution(skillId, executionId);
+    const status = await client.skills.getExecution<SkillExecution>(skillId, executionId);
 
     if (status.data.status === 'completed') {
       console.log(`    ✅ Completed in ${Date.now() - startTime}ms`);

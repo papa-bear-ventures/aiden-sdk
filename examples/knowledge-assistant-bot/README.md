@@ -13,7 +13,7 @@ A command-line knowledge assistant that connects to your company's documentation
 
 ```bash
 cp .env.example .env
-# Edit .env with your Aiden API key and notebook ID
+# Edit .env: external API base URL (e.g. test.ext-api.aiden-tech.eu), API key, notebook ID
 
 npm install
 npm start

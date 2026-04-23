@@ -15,7 +15,7 @@
 import 'dotenv/config';
 import * as readline from 'readline';
 import { AidenClient, AidenError, RateLimitError } from '@aiden-ai/sdk';
-import type { StreamEvent, DeltaEventData } from '@aiden-ai/sdk';
+import type { StreamEvent, DeltaEventData, ChatSession } from '@aiden-ai/sdk';
 
 // ============================================================================
 // Configuration
@@ -53,12 +53,17 @@ async function ensureSession(): Promise<string> {
   if (sessionId) return sessionId;
 
   console.log('\n🔗 Creating knowledge session...');
-  const session = await client.knowledge.createNotebookSession(NOTEBOOK_ID!, {
+  const session = await client.knowledge.createNotebookSession<ChatSession>(NOTEBOOK_ID!, {
     title: 'Knowledge Assistant',
   });
-  sessionId = session.data._id;
-  console.log(`📚 Connected to notebook (session: ${sessionId})\n`);
-  return sessionId;
+  const d = session.data;
+  const id = d._id ?? d.id ?? d.sessionId;
+  if (!id) {
+    throw new Error('API did not return a session id');
+  }
+  sessionId = id;
+  console.log(`📚 Connected to notebook (session: ${id})\n`);
+  return id;
 }
 
 async function askQuestion(question: string): Promise<void> {

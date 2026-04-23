@@ -1,88 +1,34 @@
 /**
- * @aiden-ai/sdk -- Official TypeScript SDK for the Aiden AI API
- *
- * @example
- * ```typescript
- * import { AidenClient } from '@aiden-ai/sdk';
- *
- * const client = new AidenClient({
- *   apiKey: 'your-api-key',
- *   baseUrl: 'https://api.aiden.ai',
- * });
- *
- * // List notebooks
- * const notebooks = await client.notebooks.list();
- *
- * // Streaming chat with knowledge
- * const stream = await client.knowledge.think({
- *   message: 'What do you know about our products?',
- *   notebookId: 'nb-123',
- * });
- * for await (const event of stream) {
- *   if (event.type === 'delta') process.stdout.write(event.data.content);
- * }
- * ```
+ * @aiden-ai/sdk — TypeScript client for the Aiden external API.
  *
  * @packageDocumentation
  */
 
-// Main client
 export { AidenClient } from './client';
 
-// Types
 export type {
-  // Configuration
   AidenClientConfig,
-  // Response envelopes
   ApiResponse,
   PaginatedResponse,
   ApiErrorResponse,
+  ApiVersionInfo,
+  ApiV1Index,
   ResponseMeta,
   PaginationMeta,
-  // Request types
-  PaginationParams,
   ListParams,
+  PaginationParams,
   RequestOptions,
-  // SSE Streaming
   StreamEvent,
   StreamEventType,
   StreamCallbacks,
   DeltaEventData,
-  UsageEventData,
-  ErrorEventData,
   CompleteEventData,
   PDCAPhase,
   ThinkingEventVisibility,
-  // Entities
-  Notebook,
-  KnowledgeAsset,
-  ChatSession,
-  ChatMessage,
-  Skill,
   SkillExecution,
-  Prompt,
-  Artifact,
-  AIModel,
-  User,
-  UserGroup,
-  Document,
-  BillingOverview,
-  CreditTransaction,
-  Invoice,
-  Expert,
-  Flow,
-  FlowRun,
-  HumanTask,
-  MicroApp,
-  Credential,
-  SlideSession,
-  UsageStats,
-} from './types';
+  ChatSession,
+} from './core/types';
 
-// Streaming
-export { AidenStream } from './streaming';
-
-// Errors
 export {
   AidenError,
   ValidationError,
@@ -98,63 +44,48 @@ export {
   GatewayTimeoutError,
   ConnectionError,
   TimeoutError,
-} from './errors';
+  createErrorFromResponse,
+} from './core/errors';
 
-// Resource types (for consumers who want to type function parameters)
-export type {
-  CreateNotebookParams,
-  UpdateNotebookParams,
-  CreateKnowledgeAssetParams,
-  UpdateKnowledgeAssetParams,
-} from './resources/notebooks';
+export { HttpClient } from './core/http-client';
+export type { HttpRequestOptions, HttpMethod } from './core/http-client';
 
-export type {
-  ThinkingChatParams,
-  CreateChatSessionParams,
-  StreamChatParams,
-  RagAskParams,
-  RagSearchParams,
-  RagSearchResult,
-  RagAskResponse,
-  ChatCapabilities,
-} from './resources/knowledge';
+export { AidenStream } from './stream/aiden-stream';
+export { OpenAIChatStream } from './stream/openai-stream';
 
+export { OpenAIClient } from './openai/client';
 export type {
-  CreateSkillParams,
-  UpdateSkillParams,
-  RunSkillParams,
-} from './resources/skills';
+  OpenAIChatCompletionRequest,
+  OpenAIChatCompletionResponse,
+  OpenAIChatCompletionChunk,
+  OpenAIChatMessage,
+  OpenAIModelObject,
+  OpenAIModelsResponse,
+  OpenAISpeechRequest,
+  OpenAITranscriptionResponse,
+  OpenAIUsage,
+} from './openai/types';
+export type { OpenAITranscribeParams } from './openai/client';
 
-export type {
-  SubmitFeedbackParams,
-} from './resources/chat';
+export { KnowledgeApi } from './domains/knowledge';
+export type { ThinkParams } from './domains/knowledge';
 
-export type {
-  CreatePromptParams,
-  UpdatePromptParams,
-} from './resources/prompts';
-
-export type {
-  CreateArtifactParams,
-  UpdateArtifactParams,
-  SaveVersionParams,
-} from './resources/artifacts';
-
-export type {
-  UploadDocumentParams,
-} from './resources/documents';
-
-export type {
-  CreateFlowParams,
-  TriggerFlowParams,
-} from './resources/flows';
-
-export type {
-  InviteUserParams,
-  UpdateUserParams,
-  CreateGroupParams,
-} from './resources/users';
-
-export type {
-  CreateCredentialParams,
-} from './resources/credentials';
+export { NotebooksApi } from './domains/notebooks';
+export { ChatApi } from './domains/chat';
+export { SkillsApi } from './domains/skills';
+export { ModelsApi } from './domains/models';
+export { DocumentsApi } from './domains/documents';
+export { FlowsApi } from './domains/flows';
+export { BillingApi } from './domains/billing';
+export { UsersApi } from './domains/users';
+export { AgentsApi } from './domains/agents';
+export { SlidesApi } from './domains/slides';
+export { CredentialsApi } from './domains/credentials';
+export { ExpertsApi } from './domains/experts';
+export { TasksApi } from './domains/tasks';
+export { ArtifactsApi } from './domains/artifacts';
+export { PromptsApi } from './domains/prompts';
+export { MonitoringApi } from './domains/monitoring';
+export { VoiceApi } from './domains/voice';
+export { ContextApi } from './domains/context';
+export { TenantAdminApi } from './domains/tenant-admin';
